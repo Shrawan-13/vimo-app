@@ -1,31 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true">
 
-    <TextView
-        android:id="@+id/status"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Starting..." />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <Button
-        android:id="@+id/newProject"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="New project" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vimo"
+            android:textSize="40sp"
+            android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/snapshot"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Snapshot" />
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:text="Fast, predictable video editing core"
+            android:textSize="16sp" />
 
-    <Button
-        android:id="@+id/stats"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Stats" />
-</LinearLayout>
+        <Button
+            android:id="@+id/newProject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="New project" />
+
+        <Button
+            android:id="@+id/resumeProject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Resume last project" />
+
+        <Button
+            android:id="@+id/sampleProject"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Open sample project" />
+
+        <TextView
+            android:id="@+id/homeStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Ready" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <Button
+            android:id="@+id/backBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Back" />
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Editor"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/saveBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save" />
+    </LinearLayout>
+
+    <SurfaceView
+        android:id="@+id/preview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="3"
+        android:background="#000000" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp">
+
+        <Button android:id="@+id/playBtn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Play" />
+        <Button android:id="@+id/pauseBtn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Pause" />
+        <Button android:id="@+id/stopBtn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Stop" />
+        <Button android:id="@+id/seekStartBtn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Start" />
+    </LinearLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <Button android:id="@+id/newProjectBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="New" />
+            <Button android:id="@+id/addAssetBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add asset" />
+            <Button android:id="@+id/addTrackBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add track" />
+            <Button android:id="@+id/addClipBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add clip" />
+            <Button android:id="@+id/addEffectBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Add effect" />
+            <Button android:id="@+id/undoBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Undo" />
+            <Button android:id="@+id/redoBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Redo" />
+            <Button android:id="@+id/addKeyframeBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Keyframe" />
+            <Button android:id="@+id/addTransitionBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Transition" />
+            <Button android:id="@+id/previewScaleBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Scale 0.5" />
+            <Button android:id="@+id/setResBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1080p" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <Button android:id="@+id/exportStartBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Export start" />
+            <Button android:id="@+id/exportPauseBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Export pause" />
+            <Button android:id="@+id/exportResumeBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Export resume" />
+            <Button android:id="@+id/exportCancelBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Export cancel" />
+            <Button android:id="@+id/snapshotBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Snapshot" />
+            <Button android:id="@+id/statsBtn" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Stats" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="2">
+
+        <TextView
+            android:id="@+id/output"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="monospace"
+            android:padding="8dp"
+            android:text="Ready" />
+    </ScrollView>
+</LinearLayout>
