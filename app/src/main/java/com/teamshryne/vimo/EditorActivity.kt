@@ -1,11 +1,16 @@
 package com.teamshryne.vimo
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.widget.Button
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import java.io.File
 
@@ -13,7 +18,16 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
     private var engine: Long = 0
     private lateinit var output: TextView
     private lateinit var surfaceView: SurfaceView
-    private var surfaceReady = false
+    private lateinit var mediaAdapter: MediaAdapter
+    private lateinit var timelineAdapter: TimelineAdapter
+    private val importedMedia = mutableListOf<MediaItem>()
+    private var nextAssetId = 0
+    private var trackCreated = false
+
+    private val pickMedia = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        uris.forEach { uri -> importMedia(uri) }
+        refreshTimeline()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -21,6 +35,17 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         output = findViewById(R.id.output)
         surfaceView = findViewById(R.id.preview)
         surfaceView.holder.addCallback(this)
+
+        mediaAdapter = MediaAdapter(importedMedia) { item -> addClipFromMedia(item) }
+        findViewById<RecyclerView>(R.id.mediaList).apply {
+            layoutManager = LinearLayoutManager(this@EditorActivity, LinearLayoutManager.HORIZONTAL, false)
+            adapter = mediaAdapter
+        }
+        timelineAdapter = TimelineAdapter()
+        findViewById<RecyclerView>(R.id.timelineList).apply {
+            layoutManager = LinearLayoutManager(this@EditorActivity)
+            adapter = timelineAdapter
+        }
 
         try {
             engine = VimoCore.nativeCreate(1280, 720, 48000, 2)
@@ -40,32 +65,38 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         findViewById<Button>(R.id.newProjectBtn).setOnClickListener {
             cmd(Cmd.NEW_PROJECT)
             setupSample()
+            refreshTimeline()
             log("New project")
         }
         findViewById<Button>(R.id.addAssetBtn).setOnClickListener {
-            cmd(Cmd.ADD_ASSET, text = "demo.mp4", floats = floatArrayOf(10f, 1920f, 1080f, 1f))
-            log("Asset added")
+            pickMedia.launch(arrayOf("video/*", "audio/*"))
         }
         findViewById<Button>(R.id.addTrackBtn).setOnClickListener {
             cmd(Cmd.ADD_TRACK, a = 0)
+            trackCreated = true
+            refreshTimeline()
             log("Track added")
         }
         findViewById<Button>(R.id.addClipBtn).setOnClickListener {
             cmd(Cmd.ADD_CLIP, a = 0, b = 0, c = 0)
+            refreshTimeline()
             log("Clip added")
         }
         findViewById<Button>(R.id.addEffectBtn).setOnClickListener {
             cmd(Cmd.ADD_EFFECT, a = 0, b = 0, c = 0)
+            refreshTimeline()
             log("Effect added")
         }
-        findViewById<Button>(R.id.undoBtn).setOnClickListener { cmd(Cmd.UNDO); log("Undo") }
-        findViewById<Button>(R.id.redoBtn).setOnClickListener { cmd(Cmd.REDO); log("Redo") }
+        findViewById<Button>(R.id.undoBtn).setOnClickListener { cmd(Cmd.UNDO); refreshTimeline(); log("Undo") }
+        findViewById<Button>(R.id.redoBtn).setOnClickListener { cmd(Cmd.REDO); refreshTimeline(); log("Redo") }
         findViewById<Button>(R.id.addKeyframeBtn).setOnClickListener {
             cmd(Cmd.ADD_KEYFRAME, a = 0, b = 0, c = 1_000_000_000L, floats = floatArrayOf(0.5f))
+            refreshTimeline()
             log("Keyframe added")
         }
         findViewById<Button>(R.id.addTransitionBtn).setOnClickListener {
             cmd(Cmd.ADD_TRANSITION, a = 0, b = 0, c = 0)
+            refreshTimeline()
             log("Transition added")
         }
         findViewById<Button>(R.id.previewScaleBtn).setOnClickListener {
@@ -85,7 +116,8 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         findViewById<Button>(R.id.exportCancelBtn).setOnClickListener { cmd(Cmd.CANCEL_EXPORT); log("Export cancelled") }
         findViewById<Button>(R.id.snapshotBtn).setOnClickListener {
             val json = VimoCore.nativeSnapshot(engine)
-            log("Snapshot: ${json?.take(500) ?: "null"}")
+            log("Snapshot: ${json?.take(800) ?: "null"}")
+            refreshTimeline()
         }
         findViewById<Button>(R.id.statsBtn).setOnClickListener {
             val s = VimoCore.nativeStats(engine)
@@ -99,6 +131,45 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         }
     }
 
+    private fun importMedia(uri: Uri) {
+        try {
+            contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (_: Exception) {
+        }
+        val name = "media_${System.currentTimeMillis()}.mp4"
+        val dest = File(filesDir, "media/$name")
+        dest.parentFile?.mkdirs()
+        try {
+            contentResolver.openInputStream(uri)?.use { input ->
+                dest.outputStream().use { output -> input.copyTo(output) }
+            }
+            importedMedia.add(MediaItem(dest.absolutePath))
+            mediaAdapter.notifyDataSetChanged()
+            val assetId = nextAssetId++
+            cmd(Cmd.ADD_ASSET, text = dest.absolutePath, floats = floatArrayOf(60f, 1920f, 1080f, 1f))
+            if (!trackCreated) {
+                cmd(Cmd.ADD_TRACK, a = 0)
+                trackCreated = true
+            }
+            cmd(Cmd.ADD_CLIP, a = 0, b = assetId.toLong(), c = 0)
+            log("Imported: ${dest.name}")
+        } catch (t: Throwable) {
+            log("Import failed: ${t.message}")
+        }
+    }
+
+    private fun addClipFromMedia(item: MediaItem) {
+        val assetId = nextAssetId++
+        cmd(Cmd.ADD_ASSET, text = item.path, floats = floatArrayOf(60f, 1920f, 1080f, 1f))
+        if (!trackCreated) {
+            cmd(Cmd.ADD_TRACK, a = 0)
+            trackCreated = true
+        }
+        cmd(Cmd.ADD_CLIP, a = 0, b = assetId.toLong(), c = 0)
+        refreshTimeline()
+        log("Clip added from media")
+    }
+
     private fun setupProject() {
         val path = intent.getStringExtra("project_path")
         val isNew = intent.getBooleanExtra("new", false)
@@ -110,6 +181,7 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
             }
             isNew || isSample -> setupSample()
         }
+        refreshTimeline()
     }
 
     private fun setupSample() {
@@ -119,6 +191,7 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         cmd(Cmd.SET_FPS, a = 30, b = 1)
         cmd(Cmd.ADD_ASSET, text = "sample.mp4", floats = floatArrayOf(10f, 1920f, 1080f, 1f))
         cmd(Cmd.ADD_TRACK, a = 0)
+        trackCreated = true
         cmd(Cmd.ADD_CLIP, a = 0, b = 0, c = 0)
         cmd(Cmd.ADD_EFFECT, a = 0, b = 0, c = 0)
     }
@@ -144,10 +217,38 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         VimoCore.nativeExecute(engine, tag, a, b, c, text, floats)
     }
 
-    private fun log(msg: String) {
-        runOnUiThread {
-            output.append("\n$msg")
+    private fun refreshTimeline() {
+        if (engine == 0L) return
+        val json = VimoCore.nativeSnapshot(engine) ?: return
+        try {
+            val obj = JSONObject(json)
+            val tracks = obj.getJSONArray("tracks")
+            val items = mutableListOf<TimelineClip>()
+            for (i in 0 until tracks.length()) {
+                val t = tracks.getJSONObject(i)
+                val tid = t.getInt("id")
+                val clips = t.getJSONArray("clips")
+                for (j in 0 until clips.length()) {
+                    val c = clips.getJSONObject(j)
+                    items.add(
+                        TimelineClip(
+                            trackId = tid,
+                            clipId = c.getInt("id"),
+                            startMs = c.getLong("startNs") / 1_000_000,
+                            endMs = c.getLong("endNs") / 1_000_000,
+                            asset = c.getInt("asset"),
+                        )
+                    )
+                }
+            }
+            timelineAdapter.setItems(items)
+        } catch (t: Throwable) {
+            log("Timeline parse failed: ${t.message}")
         }
+    }
+
+    private fun log(msg: String) {
+        runOnUiThread { output.append("\n$msg") }
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
@@ -155,15 +256,11 @@ class EditorActivity : AppCompatActivity(), SurfaceHolder.Callback {
         val w = surfaceView.width.coerceAtLeast(1)
         val h = surfaceView.height.coerceAtLeast(1)
         val ok = VimoCore.nativeSetSurface(engine, holder.surface, w, h)
-        surfaceReady = ok
         log("Surface: $ok ${w}x${h}")
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {}
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        surfaceReady = false
-    }
+    override fun surfaceDestroyed(holder: SurfaceHolder) {}
 
     override fun onDestroy() {
         if (engine != 0L) {
